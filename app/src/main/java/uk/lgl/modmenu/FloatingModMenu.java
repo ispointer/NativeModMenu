@@ -520,7 +520,7 @@ public class FloatingModMenu {
         }
     }
 
-    private View Switch(final int featNum, final String featName, boolean swiOn) {
+     private View Switch(final int featNum, final String featName, boolean swiOn) {
         final Switch switchR = new Switch(activity);
         ColorStateList buttonStates = new ColorStateList(
                 new int[][]{
@@ -542,21 +542,14 @@ public class FloatingModMenu {
         switchR.setText(featName);
         switchR.setTextColor(TEXT_COLOR_2);
         switchR.setPadding(10, 5, 0, 5);
-        switchR.setChecked(swiOn);
         switchR.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton compoundButton, boolean bool) {
-                switch (featNum) {
-                    case -1: //Save perferences
-                        if (bool == false)
-                            break;
-                    case -3:
-                        scrollView.setLayoutParams(bool ? scrlLLExpanded : scrlLL);
-                        break;
-                }
+                Changes(activity, featNum, featName, 0, bool, "");
             }
         });
         return switchR;
-    }
+     }
+    
 
     private View SeekBar(final int featNum, final String featName, final int min, final int max) {
         // Remove loadedProg since Changes is void
