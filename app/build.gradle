@@ -1,7 +1,28 @@
+import com.android.build.gradle.tasks.ExternalNativeBuildTask
+
 plugins {
     alias(libs.plugins.android.application)
 }
+class JavaDex {
+    public static String xxd_p(String file) {
+        StringBuilder hexString = new StringBuilder()
+        try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] data = fis.readAllBytes()
+            for (byte b : data) {
+                hexString.append(String.format("%02X", b))
+            }
+        }
+        return hexString.toString()
+    }
 
+    public static String base64_encode(String file) throws IOException {
+        byte[] data
+        try (FileInputStream fis = new FileInputStream(file)) {
+            data = fis.readAllBytes()
+        }
+        return Base64.getEncoder().encodeToString(data)
+    }
+}
 android {
     namespace 'uk.lgl'
     compileSdk {
@@ -19,23 +40,71 @@ android {
         }
 
         versionName "1.0"
+        multiDexEnabled false
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+
+    buildFeatures {
+        buildConfig = true
+        aidl = true
+        prefab = true
+    }
     externalNativeBuild {
         ndkBuild {
             path file('src/main/jni/Android.mk')
+        }
+    }
+
+    tasks.register("Dex2CppAnd8Up") {
+        outputs.upToDateWhen { false }
+
+        inputs.files fileTree(dir: "${project.projectDir}/src/main/java", includes: ['**/*.java'])
+        outputs.file("${project.projectDir}/src/main/jni/JavaGPP/Interface/OreoOrMore.h")
+
+        doFirst {
+            def dexPath = "${project.buildDir}/intermediates/dex/debug/mergeDexDebug/classes.dex"
+
+            String string = JavaDex.xxd_p(dexPath)
+
+            def file = new File(project.projectDir, "src/main/jni/JavaGPP/Interface/OreoOrMore.h")
+            file.parentFile.mkdirs()
+
+            file.write("#define OreoOrMore \"${string}\"")
+
+            println "Dex2CppAnd8Up: Header generated successfully."
+        }
+    }
+
+    tasks.register("Dex2Cpp") {
+        dependsOn "Dex2CppAnd8Up"
+    }
+    tasks.withType(ExternalNativeBuildTask).configureEach { compileTask ->
+        compileTask.dependsOn "Dex2Cpp"
+    }
+    tasks.all { task ->
+        if (task.name == 'buildCMakeDebug[armeabi-v7a]') {
+            task.dependsOn "Dex2Cpp"
+        }
+
+        if (task.name == 'configureCMakeDebug[arm64-v8a]') {
+            task.dependsOn "Dex2Cpp"
+        }
+
+        if (task.name == 'assembleDebug') {
+            task.dependsOn "Dex2Cpp"
         }
     }
 }

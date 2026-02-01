@@ -130,7 +130,7 @@ public class FloatingModMenu {
 
         private static FloatingModMenu instance;
 
-        public static void antik(final Context context) {
+        public static void CreateMenu(final Context context) {
             if (instance != null) return;
             if (!(context instanceof Activity)) {
                 Handler handler = new Handler(Looper.getMainLooper());
