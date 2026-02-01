@@ -772,100 +772,118 @@ public class FloatingModMenu {
 
 
     private View TextField(final int featNum, final String featName, final boolean numOnly, final int maxValue) {
+        final EditTextString edittextstring = new EditTextString();
+        final EditTextNum edittextnum = new EditTextNum();
         LinearLayout linearLayout = new LinearLayout(activity);
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
         layoutParams.setMargins(7, 5, 7, 5);
 
         final Button button = new Button(activity);
+        if (numOnly) {
+            int num = 0;
+            edittextnum.setNum((num == 0) ? 1 : num);
+            button.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + ((num == 0) ? 1 : num) + "</font>"));
+        } else {
+            String string = "";
+            edittextstring.setString((string == "") ? "" : string);
+            button.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + string + "</font>"));
+        }
         button.setAllCaps(false);
         button.setLayoutParams(layoutParams);
         button.setBackgroundColor(BTN_COLOR);
         button.setTextColor(TEXT_COLOR_2);
-
-        // Store value directly in an array (to allow mutation inside inner class)
-        final String[] stringVal = {""};
-        final int[] numVal = {1};
-
-        // Set initial text
-        button.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + (numOnly ? numVal[0] : stringVal[0]) + "</font>"));
-
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+               Toast.makeText(activity,  "Button clicked", Toast.LENGTH_SHORT).show();
                 final AlertDialog alert = new AlertDialog.Builder(activity, 2).create();
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                    Objects.requireNonNull(alert.getWindow())
-                            .setType(Build.VERSION.SDK_INT >= 26 ? 2038 : 2002);
-                }
-
-                alert.setOnCancelListener(dialog -> {
-                    InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+                alert.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @SuppressLint("WrongConstant")
+                    public void onCancel(DialogInterface dialog) {
+                        InputMethodManager imm = (InputMethodManager) activity.getSystemService(activity.INPUT_METHOD_SERVICE);
+                        imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+                    }
                 });
 
-                LinearLayout dialogLayout = new LinearLayout(activity);
-                dialogLayout.setPadding(5, 5, 5, 5);
-                dialogLayout.setOrientation(LinearLayout.VERTICAL);
-                dialogLayout.setBackgroundColor(MENU_FEATURE_BG_COLOR);
+                //LinearLayout
+                LinearLayout linearLayout1 = new LinearLayout(activity);
+                linearLayout1.setPadding(5, 5, 5, 5);
+                linearLayout1.setOrientation(LinearLayout.VERTICAL);
+                linearLayout1.setBackgroundColor(MENU_FEATURE_BG_COLOR);
 
-                TextView note = new TextView(activity);
-                note.setText("Tap OK to apply changes" + (maxValue != 0 ? "\nMax value: " + maxValue : ""));
-                note.setTextColor(TEXT_COLOR_2);
+                //TextView
+                final TextView TextViewNote = new TextView(activity);
+                TextViewNote.setText("Tap OK to apply changes. Tap outside to cancel");
+                if (maxValue != 0)
+                    TextViewNote.setText("Tap OK to apply changes. Tap outside to cancel\nMax value: " + maxValue);
+                TextViewNote.setTextColor(TEXT_COLOR_2);
 
+                //Edit text
                 final EditText edittext = new EditText(activity);
                 edittext.setMaxLines(1);
                 edittext.setWidth(convertDipToPixels(300));
                 edittext.setTextColor(TEXT_COLOR_2);
-
                 if (numOnly) {
                     edittext.setInputType(InputType.TYPE_CLASS_NUMBER);
                     edittext.setKeyListener(DigitsKeyListener.getInstance("0123456789-"));
-                    edittext.setText(String.valueOf(numVal[0]));
-                    edittext.setFilters(new InputFilter[]{new InputFilter.LengthFilter(10)});
+                    InputFilter[] FilterArray = new InputFilter[1];
+                    FilterArray[0] = new InputFilter.LengthFilter(10);
+                    edittext.setFilters(FilterArray);
                 } else {
-                    edittext.setText(stringVal[0]);
+                    edittext.setText(edittextstring.getString());
                 }
-
-                edittext.setOnFocusChangeListener((v, hasFocus) -> {
-                    InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
-                    if (hasFocus) {
-                        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY);
-                    } else {
-                        imm.toggleSoftInput(InputMethodManager.SHOW_IMPLICIT, 0);
+                edittext.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                    @SuppressLint("WrongConstant")
+                    @Override
+                    public void onFocusChange(View v, boolean hasFocus) {
+                        InputMethodManager imm = (InputMethodManager) activity.getSystemService(activity.INPUT_METHOD_SERVICE);
+                        if (hasFocus) {
+                            imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY);
+                        } else {
+                            imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+                        }
                     }
                 });
                 edittext.requestFocus();
 
-                Button okBtn = new Button(activity);
-                okBtn.setBackgroundColor(BTN_COLOR);
-                okBtn.setTextColor(TEXT_COLOR_2);
-                okBtn.setText("OK");
-                okBtn.setOnClickListener(v -> {
-                    if (numOnly) {
-                        int num;
-                        try {
-                            num = Integer.parseInt(TextUtils.isEmpty(edittext.getText().toString()) ? "0" : edittext.getText().toString());
-                            if (maxValue != 0 && num > maxValue) num = maxValue;
-                        } catch (NumberFormatException ex) {
-                            num = 2147483640;
+                //Button
+                Button btndialog = new Button(activity);
+                btndialog.setBackgroundColor(BTN_COLOR);
+                btndialog.setTextColor(TEXT_COLOR_2);
+                btndialog.setText("OK");
+                btndialog.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        if (numOnly) {
+                            int num;
+                            try {
+                                num = Integer.parseInt(TextUtils.isEmpty(edittext.getText().toString()) ? "0" : edittext.getText().toString());
+                                if (maxValue != 0 &&  num >= maxValue)
+                                    num = maxValue;
+                            } catch (NumberFormatException ex) {
+                                num = 2147483640;
+                            }
+                            edittextnum.setNum(num);
+                            button.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + num + "</font>"));
+                            alert.dismiss();
+                            Changes(activity, featNum, featName, num, false, "");
+                           // Preferences.changeFeatureInt(featName, featNum, num);
+                        } else {
+                            String str = edittext.getText().toString();
+                            edittextstring.setString(edittext.getText().toString());
+                            button.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + str + "</font>"));
+                            alert.dismiss();
+                            Changes(activity, featNum, featName, 0, false, str);
+                            //Preferences.changeFeatureString(featName, featNum, str);
                         }
-                        numVal[0] = num;
-                        button.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + num + "</font>"));
-                        Changes(activity, featNum, featName, num, true, "");
-                    } else {
-                        String str = edittext.getText().toString();
-                        stringVal[0] = str;
-                        button.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + str + "</font>"));
-                        Changes(activity, featNum, featName, 0, false, str);
+                        edittext.setFocusable(false);
                     }
-                    alert.dismiss();
-                    edittext.setFocusable(false);
                 });
 
-                dialogLayout.addView(note);
-                dialogLayout.addView(edittext);
-                dialogLayout.addView(okBtn);
-                alert.setView(dialogLayout);
+                linearLayout1.addView(TextViewNote);
+                linearLayout1.addView(edittext);
+                linearLayout1.addView(btndialog);
+                alert.setView(linearLayout1);
                 alert.show();
             }
         });
@@ -1018,7 +1036,29 @@ public class FloatingModMenu {
         return wView;
     }
 
+    private class EditTextString {
+        private String text;
 
+        public void setString(String s) {
+            text = s;
+        }
+
+        public String getString() {
+            return text;
+        }
+    }
+
+    private class EditTextNum {
+        private int val;
+
+        public void setNum(int i) {
+            val = i;
+        }
+
+        public int getNum() {
+            return val;
+        }
+    }
 
 
     private boolean isViewCollapsed() {
