@@ -42,6 +42,12 @@ void *hack_thread(void *) {
         sleep(1);
     } while (!isLibraryLoaded(targetLibName));
 
+    //anti lib rename 
+/*
+    do{
+        sleep(1);
+    }while(!isLibraryLoaded("libmylibname.so"));
+*/
 
     LOGI(OBFUSCATE("%s has been loaded"), (const char *) targetLibName);
 
