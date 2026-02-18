@@ -1,59 +1,77 @@
-# ==========================================================
-#                  NATIVE MOD MENU (NMM)
-# ==========================================================
-#  A custom high-performance reimplementation of the LGL 
-#  Android Mod Menu with In-Memory Dex Loading.
-# ==========================================================
+# NativeModMenu
 
-[ DESCRIPTION ]
-NativeModMenu is a stealth-oriented implementation that loads 
-the Java UI layer entirely from memory using InMemoryDexClassLoader. 
-By embedding the FloatingModMenu.dex as a HEX string, it eliminates 
-the need for shipping or extracting external .dex files on disk.
+### High-Performance In-Memory Dex Loader for Android
 
-[ CORE ARCHITECTURE ]
-- ZERO DISK FOOTPRINT: No external dex file or asset extraction.
-- MEMORY LOADING: Utilizes dalvik.system.InMemoryDexClassLoader.
-- JNI BOOTSTRAP: Menu initialization triggered via native code.
-- CLEAN INJECTION: Stealthier footprint for modern environments.
-- FULL COMPATIBILITY: Supports existing LGL Java-based menu code.
+`NativeModMenu` is a sophisticated reimplementation of the LGL Android Mod Menu. It leverages `InMemoryDexClassLoader` to load the Java UI layer directly from system memory, eliminating the need for physical `.dex` files on the device storage.
 
-[ TECHNICAL WORKFLOW ]
-1. DEX EMBEDDING: FloatingModMenu.dex is stored as a HEX string.
-2. BUFFER CONVERSION: HEX string is parsed into a ByteBuffer at runtime.
-3. DYNAMIC LOADING: InMemoryDexClassLoader loads the buffer directly.
-4. NATIVE BINDING: JNI registers functions to the Java menu class.
-5. EXECUTION: Calls 'FloatingModMenu.antik(Context)' to launch.
+---
 
-[ JNI NATIVE INTERFACE ]
-The following methods are registered dynamically:
+## Technical Overview
 
-- Icon()              : Returns menu icon data.
-- IconWebViewData()   : Returns WebView-based icon data.
-- getFeatureList()    : Defines the menu features.
-- settingsList()      : Defines the menu settings.
-- Changes(...)        : Handles feature toggles and logic.
-- setTitleText(...)   : Customizes the menu title.
-- setHeadingText(...) : Customizes the menu heading.
+This implementation focuses on stealth and efficiency by embedding the `FloatingModMenu.dex` as a HEX-encoded string within the native binary. At runtime, the JNI layer performs a dynamic bootstrap to initialize the menu without leaving any traces in the application's assets or data folders.
 
-[ SYSTEM REQUIREMENTS ]
-- OS      : Android 8.0+ (API Level 26+)
-- ARCH    : ARMv7, ARM64-v8a
-- RUNTIME : JNI-based injection environment
-- ASSET   : Prebuilt compatible FloatingModMenu.dex
+### Key Architectural Differences
 
-[ ENTRY POINT ]
-- Function: void binJava()
-- Executed post JNI_OnLoad.
-- Context acquisition via ActivityThread.
+* **Zero Disk Footprint:** No external dex file is shipped; the menu exists only in memory.
+* **Volatile Loading:** Utilizes `dalvik.system.InMemoryDexClassLoader` for runtime execution.
+* **Native-Led Initialization:** The entire menu lifecycle is managed via JNI native bindings.
+* **Reduced Attack Surface:** Eliminates file-based detection vectors by avoiding asset extraction.
+* **Native Compatibility:** Fully compatible with existing LGL Java menu logic.
 
-[ LEGAL & ETHICAL NOTICE ]
-This project is intended for educational and research purposes 
-only. Modifying runtime behavior of applications may violate 
-Terms of Service. Use responsibly.
+---
 
-[ CREDITS ]
-- Original Concept : LGL Android Mod Menu
-- Project Lead     : AntikMods
-- Dex Loader Logic : NepMods
-# ==========================================================
+## Core Logic Flow
+
+1. **Data Embedding:** The `FloatingModMenu.dex` is converted to a HEX string and compiled into the C++ source.
+2. **Buffer Reconstruction:** At runtime, the HEX string is decoded into a `ByteBuffer`.
+3. **Class Loading:** The `InMemoryDexClassLoader` interprets the buffer and loads the `uk.lgl.modmenu.FloatingModMenu` class.
+4. **JNI Registration:** Native functions are dynamically bound to the Java class methods.
+5. **Execution:** The `binJava()` entry point triggers `FloatingModMenu.antik(Context)` to render the UI.
+
+---
+
+## JNI Native Interface
+
+The following methods are registered dynamically to bridge the Native and Java layers:
+
+| Method | Functionality |
+| --- | --- |
+| `Icon()` | Returns the primary menu icon |
+| `IconWebViewData()` | Manages WebView icon resources |
+| `getFeatureList()` | Retrieves the feature configuration array |
+| `settingsList()` | Retrieves the menu settings configuration |
+| `Changes(...)` | Main event handler for feature toggles |
+| `setTitleText(...)` | Customizes the UI title appearance |
+| `setHeadingText(...)` | Customizes the UI heading appearance |
+
+---
+
+## Implementation Details
+
+### Requirements
+
+* **Android Version:** 8.0 (API 26) or higher
+* **Architecture:** ARMv7, ARM64-v8a
+* **Environment:** Native JNI-based injection
+
+### Entry Point
+
+```cpp
+// Executed post JNI_OnLoad
+void binJava(); 
+
+```
+
+The `binJava` function is responsible for retrieving the `Application` context via `ActivityThread` and initiating the memory-loading sequence.
+
+---
+
+## Legal Notice
+
+This project is developed strictly for **educational and research purposes**. Modifying the runtime behavior of third-party applications may violate their Terms of Service. The developers assume no liability for misuse.
+
+## Acknowledgments
+
+* **Original Architecture:** LGL Android Mod Menu
+* **Lead Developer:** AntikMods
+* **Memory Loading Logic:** NepMods
