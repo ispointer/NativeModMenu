@@ -20,11 +20,11 @@ class JavaDex {
 }
 
 android {
-    namespace 'uk.lgl'
+    namespace 'com.android.support'
     compileSdk 36
 
     defaultConfig {
-        applicationId "uk.lgl"
+        applicationId "com.android.support"
         minSdk 28
         targetSdk 36
         versionCode 1
@@ -48,6 +48,7 @@ android {
         ndkBuild {
             path file('src/main/jni/Android.mk')
         }
+      ndkVersion = '28.2.13676358'
     }
 
     android.applicationVariants.all { variant ->
@@ -72,10 +73,10 @@ android {
 
                 def dexFile = dexFiles.first()
                 String hexString = JavaDex.xxd_p(dexFile.absolutePath)
-                def headerFile = file("${project.projectDir}/src/main/jni/JavaGPP/Interface/OreoOrMore.h")
+                def headerFile = file("${project.projectDir}/src/main/jni/Includes/Dex.h")
 
                 headerFile.parentFile.mkdirs()
-                headerFile.write("#define OreoOrMore \"${hexString}\"\n")
+                headerFile.write("#define hexdex \"${hexString}\"\n")
                 println ">>> Success: Generated header for ${variantName}"
             }
         }

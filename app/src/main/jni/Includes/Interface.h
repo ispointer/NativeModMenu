@@ -1,27 +1,31 @@
-//
-// Created by aantik on 2/1/2026.
-//
-// Interface.cpp
-
-#include "Interface.h"
-#include "OreoOrMore.h"
+#include "Dex.h"
 #include <cctype>
 
 JavaVM *antik = nullptr;
 JNIEnv *antikYt = nullptr;
 
-
 namespace InterfaceMethods {
-    void *Icon = nullptr;
-    void *IconWebViewData = nullptr;
-    void *getFeatureList = nullptr;
-    void *settingsList = nullptr;
-    void *Changes = nullptr;
-    void *setTitleText = nullptr;
-    void *setHeadingText = nullptr;
-};
+    void *Icon;
+    void *IconWebViewData;
+    void *Init;
+    void *SettingsList;
+    void *GetFeatureList;
+    void *Changes;
+}
 jclass menuClass;
 
+static void RegisterMethods(JNIEnv *env) {
+    JNINativeMethod NativeMethodsClassMethods[] = {
+            {"Icon", "()Ljava/lang/String;", InterfaceMethods::Icon},
+            {"IconWebViewData", "()Ljava/lang/String;", InterfaceMethods::IconWebViewData},
+            {"Init", "(Landroid/content/Context;Landroid/widget/TextView;Landroid/widget/TextView;)V", InterfaceMethods::Init},
+            {"SettingsList", "()[Ljava/lang/String;", InterfaceMethods::SettingsList},
+            {"GetFeatureList", "()[Ljava/lang/String;", InterfaceMethods::GetFeatureList},
+            {"Changes", "(Landroid/content/Context;ILjava/lang/String;IZLjava/lang/String;)V", InterfaceMethods::Changes},
+    };
+
+    env->RegisterNatives(menuClass, NativeMethodsClassMethods,sizeof(NativeMethodsClassMethods) / sizeof(NativeMethodsClassMethods[0]));
+}
 
 static jobjectArray HEX(JNIEnv* env, const std::string& hex) {
     int len = hex.length() / 2;
@@ -41,22 +45,8 @@ static jobjectArray HEX(JNIEnv* env, const std::string& hex) {
     return env->NewObjectArray(1, bbCls, bb);
 }
 
-static void RegisterMethods(JNIEnv *env) {
-
-    JNINativeMethod NativeMethodsClassMethods[] = {
-            {"Icon", "()Ljava/lang/String;", InterfaceMethods::Icon},
-            {"IconWebViewData", "()Ljava/lang/String;", InterfaceMethods::IconWebViewData},
-            {"getFeatureList", "()[Ljava/lang/String;", InterfaceMethods::getFeatureList},
-            {"settingsList", "()[Ljava/lang/String;", InterfaceMethods::settingsList},
-            {"Changes", "(Landroid/content/Context;ILjava/lang/String;IZLjava/lang/String;)V", InterfaceMethods::Changes},
-            {"setTitleText", "(Landroid/widget/TextView;)V", InterfaceMethods::setTitleText},
-            {"setHeadingText", "(Landroid/widget/TextView;)V", InterfaceMethods::setHeadingText},
-    };
-
-    env->RegisterNatives(menuClass, NativeMethodsClassMethods,sizeof(NativeMethodsClassMethods) / sizeof(NativeMethodsClassMethods[0]));
-}
 static void loadDex(JNIEnv* env, jobject context) {
-    jobjectArray buffers = HEX(env, OreoOrMore);
+    jobjectArray buffers = HEX(env, hexdex);
     if (!buffers) return;
     jclass classLoaderClass = env->FindClass("java/lang/ClassLoader");
     jmethodID getSystemClassLoader = env->GetStaticMethodID(classLoaderClass,"getSystemClassLoader","()Ljava/lang/ClassLoader;");
@@ -64,8 +54,9 @@ static void loadDex(JNIEnv* env, jobject context) {
     jclass imCls = env->FindClass("dalvik/system/InMemoryDexClassLoader");
     jmethodID ctor = env->GetMethodID(imCls,"<init>","([Ljava/nio/ByteBuffer;Ljava/lang/ClassLoader;)V");
     jobject dexLoader = env->NewObject(imCls, ctor, buffers, parentCl);
+    
     jmethodID loadClass = env->GetMethodID(imCls,"loadClass","(Ljava/lang/String;)Ljava/lang/Class;");
-    jstring clsName = env->NewStringUTF("uk.lgl.modmenu.FloatingModMenu");
+    jstring clsName = env->NewStringUTF("com.android.support.Menu");
     menuClass = (jclass) env->CallObjectMethod(dexLoader, loadClass, clsName);
     if (!menuClass) return;
     menuClass = (jclass) env->NewGlobalRef(menuClass);
@@ -76,12 +67,10 @@ static void loadDex(JNIEnv* env, jobject context) {
 }
 
 void binJava() {
-    if (antik->AttachCurrentThread(&antikYt, nullptr) != JNI_OK) return;
+	if (antik->AttachCurrentThread(&antikYt, nullptr) != JNI_OK) return;
     jclass atCls = antikYt->FindClass("android/app/ActivityThread");
     jmethodID curApp = antikYt->GetStaticMethodID(atCls,"currentApplication","()Landroid/app/Application;");
     jobject app = antikYt->CallStaticObjectMethod(atCls, curApp);
     if (!app) return;
     loadDex(antikYt, app);
 }
-
-
