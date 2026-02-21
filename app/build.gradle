@@ -1,0 +1,90 @@
+import com.android.build.gradle.tasks.ExternalNativeBuildTask
+import java.io.FileInputStream
+
+plugins {
+    alias(libs.plugins.android.application)
+}
+
+class JavaDex {
+    public static String xxd_p(String filePath) {
+        StringBuilder hexString = new StringBuilder()
+        File file = new File(filePath)
+        try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] data = fis.readAllBytes()
+            for (byte b : data) {
+                hexString.append(String.format("%02X", b))
+            }
+        }
+        return hexString.toString()
+    }
+}
+
+android {
+    namespace 'uk.lgl'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "uk.lgl"
+        minSdk 28
+        targetSdk 36
+        versionCode 1
+        versionName "1.0"
+
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
+        }
+
+        multiDexEnabled false
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    externalNativeBuild {
+        ndkBuild {
+            path file('src/main/jni/Android.mk')
+        }
+    }
+
+    android.applicationVariants.all { variant ->
+        def variantName = variant.name.capitalize()
+        def taskName = "Dex2CppAnd8Up${variantName}"
+
+        def customTask = tasks.register(taskName) {
+            outputs.upToDateWhen { false }
+
+            def mergeDexTask = tasks.findByName("mergeDex${variantName}")
+            if (mergeDexTask) {
+                dependsOn mergeDexTask
+            }
+
+            doLast {
+                def dexDir = file("${project.buildDir}/intermediates/dex/${variant.name}/mergeDex${variantName}")
+                def dexFiles = fileTree(dir: dexDir, include: "**/classes.dex")
+
+                if (dexFiles.isEmpty()) {
+                    throw new GradleException("classes.dex not found for ${variant.name} in ${dexDir}")
+                }
+
+                def dexFile = dexFiles.first()
+                String hexString = JavaDex.xxd_p(dexFile.absolutePath)
+                def headerFile = file("${project.projectDir}/src/main/jni/JavaGPP/Interface/OreoOrMore.h")
+
+                headerFile.parentFile.mkdirs()
+                headerFile.write("#define OreoOrMore \"${hexString}\"\n")
+                println ">>> Success: Generated header for ${variantName}"
+            }
+        }
+
+        tasks.configureEach { task ->
+            if (task.name.startsWith("buildNdkBuild${variantName}") ||
+                    task.name.startsWith("externalNativeBuild${variantName}")) {
+                task.dependsOn customTask
+            }
+        }
+    }
+}
