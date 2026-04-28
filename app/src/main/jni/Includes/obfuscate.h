@@ -21,6 +21,7 @@ Example:
 const char* obfuscated_string = AY_OBFUSCATE("Hello World");
 std::cout << obfuscated_string << std::endl;
 ----------------------------------------------------------------------------- */
+#pragma once
 #include <cstddef>
 #include <string>
 
