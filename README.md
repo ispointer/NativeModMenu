@@ -10,6 +10,13 @@
 
 This implementation focuses on stealth and efficiency by embedding the `FloatingModMenu.dex` as a HEX-encoded string within the native binary. At runtime, the JNI layer performs a dynamic bootstrap to initialize the menu without leaving any traces in the application's assets or data folders.
 
+## Termux code
+``
+pkg install xxd
+``
+``
+begin; printf '#define hexdex "'; xxd -p -c0 classes.dex | tr 'a-f' 'A-F' | tr -d '\n'; printf '"\n'; end > Dex.h
+``
 ### Key Architectural Differences
 
 * **Zero Disk Footprint:** No external dex file is shipped; the menu exists only in memory.

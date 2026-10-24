@@ -11,6 +11,7 @@ LOCAL_CFLAGS := -w -s -Wno-error=format-security -fvisibility=hidden -fpermissiv
 LOCAL_CPPFLAGS := -w -s -Wno-error=format-security -fvisibility=hidden -Werror -std=c++17
 LOCAL_CPPFLAGS += -Wno-error=c++11-narrowing -fpermissive -Wall -fexceptions
 LOCAL_LDFLAGS += -Wl,--gc-sections,--strip-all,-llog
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384
 LOCAL_LDLIBS := -llog -landroid -lEGL -lGLESv2
 LOCAL_ARM_MODE := arm
 
